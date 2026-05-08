@@ -8,6 +8,7 @@ let shouldResetDisplay = false;
 // Get all buttons
 const numberButtons = document.querySelectorAll('.btn-number');
 const operationButtons = document.querySelectorAll('.btn-operation');
+const advancedButtons = document.querySelectorAll('.btn-advanced');
 const equalsButton = document.getElementById('equals');
 const clearButton = document.getElementById('clear');
 const decimalButton = document.getElementById('decimal');
@@ -28,6 +29,14 @@ operationButtons.forEach(button => {
     });
 });
 
+// Event Listeners for Advanced Function Buttons
+advancedButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+        const func = e.target.id;
+        handleAdvancedFunction(func);
+    });
+});
+
 // Event Listeners for Special Buttons
 equalsButton.addEventListener('click', calculate);
 clearButton.addEventListener('click', clearDisplay);
@@ -40,6 +49,8 @@ document.addEventListener('keydown', (e) => {
     } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
         const operationMap = { '+': '+', '-': '−', '*': '×', '/': '÷' };
         handleOperation(operationMap[e.key]);
+    } else if (e.key === '^') {
+        handleAdvancedFunction('power');
     } else if (e.key === '.') {
         addDecimal();
     } else if (e.key === 'Enter' || e.key === '=') {
@@ -116,6 +127,9 @@ function performCalculation(prev, current, op) {
             }
             result = prev / current;
             break;
+        case '^':
+            result = Math.pow(prev, current);
+            break;
         default:
             result = current;
     }
@@ -136,6 +150,80 @@ function calculate() {
     operation = null;
     shouldResetDisplay = true;
     updateDisplay();
+}
+
+// Handle Advanced Functions
+function handleAdvancedFunction(func) {
+    // For operations that need a current value
+    if ((func === 'sqrt' || func === 'square' || func === 'cube' || func === 'reciprocal' || func === 'factorial' || func === 'percent') && currentValue === '') {
+        return;
+    }
+
+    // For power operation, can proceed with previousValue from operation
+    if (func === 'power') {
+        if (currentValue === '') return;
+    }
+
+    let result;
+    const value = parseFloat(currentValue);
+
+    switch (func) {
+        case 'sqrt':
+            if (value < 0) {
+                showError('Cannot get √ of negative');
+                return;
+            }
+            result = Math.sqrt(value);
+            break;
+        case 'square':
+            result = value * value;
+            break;
+        case 'cube':
+            result = value * value * value;
+            break;
+        case 'reciprocal':
+            if (value === 0) {
+                showError('Cannot divide by 0');
+                return;
+            }
+            result = 1 / value;
+            break;
+        case 'percent':
+            result = value / 100;
+            break;
+        case 'power':
+            // Set up for x^y operation (need to get exponent from next input)
+            previousValue = currentValue;
+            operation = '^';
+            shouldResetDisplay = true;
+            updateDisplay();
+            return;
+        case 'factorial':
+            if (value < 0 || !Number.isInteger(value)) {
+                showError('Invalid factorial');
+                return;
+            }
+            result = calculateFactorial(value);
+            break;
+        default:
+            return;
+    }
+
+    // Round to avoid floating point errors
+    result = Math.round(result * 100000000) / 100000000;
+    currentValue = result.toString();
+    shouldResetDisplay = true;
+    updateDisplay();
+}
+
+// Calculate Factorial
+function calculateFactorial(n) {
+    if (n === 0 || n === 1) return 1;
+    let result = 1;
+    for (let i = 2; i <= n; i++) {
+        result *= i;
+    }
+    return result;
 }
 
 // Clear Display
